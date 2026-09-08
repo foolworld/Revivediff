@@ -1,0 +1,35 @@
+name: ReviveDiff_test
+suffix: ~
+model: denoising
+distortion: adverse_weather
+gpu_ids: [0]
+
+sde:
+  max_sigma: 90
+  T: 300
+  schedule: cosine
+  eps: 0.005
+
+degradation:
+  sigma: 25
+  noise_type: G
+  scale: 4
+
+datasets:
+  test:
+    name: Test_Dataset
+    mode: LQGT
+    dataroot_GT: datasets/test/target
+    dataroot_LQ: datasets/test/input
+
+network_G:
+  which_model_G: ConditionalNAFNet
+  setting:
+    width: 64
+    enc_blk_nums: [1, 1, 1, 28]
+    middle_blk_num: 1
+    dec_blk_nums: [1, 1, 1, 1]
+
+path:
+  pretrain_model_G: pretrained/ReviveDiff.pth
+  strict_load: true

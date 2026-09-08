@@ -1,0 +1,84 @@
+#### general settings
+name: ReviveDiff_SGA2_LS
+use_tb_logger: true
+model: denoising
+distortion: adverse_weather
+gpu_ids: [0]
+
+sde:
+  max_sigma: 90
+  T: 300
+  schedule: cosine
+  eps: 0.005
+
+degradation:
+  sigma: 25
+  noise_type: G
+  scale: 4
+
+#### datasets
+datasets:
+  train:
+    name: Train_Dataset
+    mode: LQGT
+    dataroot_GT: datasets/rain100L/train/target
+    dataroot_LQ: datasets/rain100L/train/input
+    use_shuffle: true
+    n_workers: 4
+    batch_size: 4
+    # MatchingLoss uses a 256-bin histogram prior; keep patch size aligned unless
+    # you also adjust the histogram bin setting in models/modules/loss.py.
+    GT_size: 256
+    LR_size: 256
+    use_flip: true
+    use_rot: true
+    color: RGB
+  val:
+    name: Val_Dataset
+    mode: LQGT
+    dataroot_GT: datasets/rain100L/test/target
+    dataroot_LQ: datasets/rain100L/test/input
+#### network structures
+network_G:
+  which_model_G: ConditionalNAFNet
+  setting:
+    width: 64
+    enc_blk_nums: [1, 1, 1, 28]
+    middle_blk_num: 1
+    dec_blk_nums: [1, 1, 1, 1]
+#### path
+path:
+  pretrain_model_G: ~
+  strict_load: true
+  resume_state: ~
+
+#### training settings
+train:
+  optimizer: Lion
+  lr_G: !!float 4e-5
+  lr_scheme: TrueCosineAnnealingLR
+  beta1: 0.9
+  beta2: 0.99
+  weight_decay_G: 0
+  niter: 700000
+  warmup_iter: -1
+  lr_steps: [200000, 400000, 600000]
+  lr_gamma: 0.5
+  eta_min: !!float 1e-7
+  is_weighted: false
+  loss_type: charbonnier      # l1 / l2 / charbonnier
+  weight: 1.0
+  sga_weight: 0.5
+  pearson_weight: 0.1         # Pearson correlation loss weight (set 0 to disable)
+  edge_weight: 0.5            # Sobel edge loss weight (set 0 to disable)
+  hist_weight: 0.1            # Histogram loss weight (set 0 to disable)
+  freq_weight: 0.1            # Focal frequency loss weight (set 0 to disable)
+  adaptive_sigma: true        # LS mode: adaptive sigma on
+  sigma_reg_weight: 0.1       # Sigma regularization weight
+  manual_seed: 0
+  val_freq: !!float 5000
+
+#### logger
+logger:
+  print_freq: 100
+  save_checkpoint_freq: !!float 5000

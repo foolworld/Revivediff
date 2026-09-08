@@ -238,7 +238,12 @@ def main():
                 break
 
             LQ, GT = train_data["LQ"], train_data["GT"]
-            # print(LQ.shape, GT.shape)
+
+            # Adaptive sigma: compute scale and set on SDE BEFORE generating states
+            if hasattr(model, 'adaptive_sigma') and model.adaptive_sigma:
+                sigma_scale = model.compute_sigma_scale(LQ.to(model.device))
+                sde.set_sigma_scale(sigma_scale)
+
             timesteps, states = sde.generate_random_states(x0=GT, mu=LQ)
 
             model.feed_data(states, LQ, GT) # xt, mu, x0
@@ -271,6 +276,13 @@ def main():
                 for _, val_data in enumerate(val_loader):
 
                     LQ, GT = val_data["LQ"], val_data["GT"]
+
+                    # Adaptive sigma for validation
+                    if hasattr(model, 'adaptive_sigma') and model.adaptive_sigma:
+                        with torch.no_grad():
+                            val_sigma_scale = model.compute_sigma_scale(LQ.to(model.device))
+                        sde.set_sigma_scale(val_sigma_scale)
+
                     noisy_state = sde.noise_state(LQ)
 
                     # valid Predictor

@@ -151,12 +151,17 @@ class IRSDE(SDE):
 
         self.mu = 0.
         self.model = None
+        self._sigma_scale = 1.0  # adaptive sigma scale, default 1.0
 
     #####################################
 
     # set mu for different cases
     def set_mu(self, mu):
         self.mu = mu
+
+    # set adaptive sigma scale (DT-Diff inspired)
+    def set_sigma_scale(self, scale):
+        self._sigma_scale = scale
 
 
     # set score model for reverse process
@@ -172,19 +177,19 @@ class IRSDE(SDE):
         return self.mu + (x0 - self.mu) * torch.exp(-self.thetas_cumsum[t] * self.dt)
 
     def sigma_bar(self, t):
-        return self.sigma_bars[t]
+        return self.sigma_bars[t] * self._sigma_scale
 
     def drift(self, x, t):
         return self.thetas[t] * (self.mu - x) * self.dt
 
     def sde_reverse_drift(self, x, score, t):
-        return (self.thetas[t] * (self.mu - x) - self.sigmas[t]**2 * score) * self.dt
+        return (self.thetas[t] * (self.mu - x) - self.sigma(t)**2 * score) * self.dt
 
     def ode_reverse_drift(self, x, score, t):
-        return (self.thetas[t] * (self.mu - x) - 0.5 * self.sigmas[t]**2 * score) * self.dt
+        return (self.thetas[t] * (self.mu - x) - 0.5 * self.sigma(t)**2 * score) * self.dt
 
     def dispersion(self, x, t):
-        return self.sigmas[t] * (torch.randn_like(x) * math.sqrt(self.dt)).to(self.device)
+        return self.sigma(t) * (torch.randn_like(x) * math.sqrt(self.dt)).to(self.device)
 
     def get_score_from_noise(self, noise, t):
         return -noise / self.sigma_bar(t)
@@ -210,7 +215,7 @@ class IRSDE(SDE):
         return term1 * (xt - self.mu) + term2 * (x0 - self.mu) + self.mu
 
     def sigma(self, t):
-        return self.sigmas[t]
+        return self.sigmas[t] * self._sigma_scale
 
     def theta(self, t):
         return self.thetas[t]
@@ -220,6 +225,17 @@ class IRSDE(SDE):
 
     def get_real_score(self, xt, x0, t):
         return -(xt - self.mu_bar(x0, t)) / self.sigma_bar(t)**2
+
+    # invert the noise prediction to recover x0, given x_t and the predicted noise
+    def get_x0_from_noise(self, xt, noise, t):
+        exp_coef = torch.exp(-self.thetas_cumsum[t] * self.dt)
+        return self.mu + (xt - noise * self.sigma_bar(t) - self.mu) / exp_coef
+
+    # re-corrupt an (estimated) x0 back to a noisy state at timestep t
+    def renoise_state(self, x0, t):
+        state_mean = self.mu_bar(x0, t)
+        noise = torch.randn_like(state_mean)
+        return state_mean + noise * self.sigma_bar(t)
 
     # forward process to get x(T) from x(0)
     def forward(self, x0, T=-1, save_dir='forward_state'):
@@ -325,7 +341,10 @@ class IRSDE(SDE):
         return timesteps, noisy_states.to(torch.float32)
 
     def noise_state(self, tensor):
-        return tensor + torch.randn_like(tensor) * self.max_sigma
+        scale = self._sigma_scale
+        if isinstance(scale, torch.Tensor):
+            scale = scale.to(tensor.device)
+        return tensor + torch.randn_like(tensor) * self.max_sigma * scale
 
 
 

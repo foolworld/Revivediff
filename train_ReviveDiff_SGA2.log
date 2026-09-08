@@ -1,0 +1,2289 @@
+26-08-14 15:37:08.501 - INFO:   name: ReviveDiff_train
+  use_tb_logger: True
+  model: denoising
+  distortion: adverse_weather
+  gpu_ids: [0]
+  sde:[
+    max_sigma: 90
+    T: 300
+    schedule: cosine
+    eps: 0.005
+  ]
+  degradation:[
+    sigma: 25
+    noise_type: G
+    scale: 4
+  ]
+  datasets:[
+    train:[
+      name: Train_Dataset
+      mode: LQGT
+      dataroot_GT: datasets/rain100L/train/target
+      dataroot_LQ: datasets/rain100L/train/input
+      use_shuffle: True
+      n_workers: 4
+      batch_size: 4
+      GT_size: 256
+      LR_size: 256
+      use_flip: True
+      use_rot: True
+      color: RGB
+      phase: train
+      scale: 1
+      data_type: img
+    ]
+    val:[
+      name: Val_Dataset
+      mode: LQGT
+      dataroot_GT: datasets/rain100L/test/target
+      dataroot_LQ: datasets/rain100L/test/input
+      phase: val
+      scale: 1
+      data_type: img
+    ]
+  ]
+  network_G:[
+    which_model_G: ConditionalNAFNet
+    setting:[
+      width: 64
+      enc_blk_nums: [1, 1, 1, 28]
+      middle_blk_num: 1
+      dec_blk_nums: [1, 1, 1, 1]
+    ]
+  ]
+  path:[
+    pretrain_model_G: None
+    strict_load: True
+    resume_state: None
+    root: /autodl-fs/data/Revivediff-SGA2
+    experiments_root: /autodl-fs/data/Revivediff-SGA2/experiments/ReviveDiff/ReviveDiff_train
+    models: /autodl-fs/data/Revivediff-SGA2/experiments/ReviveDiff/ReviveDiff_train/models
+    training_state: /autodl-fs/data/Revivediff-SGA2/experiments/ReviveDiff/ReviveDiff_train/training_state
+    log: /autodl-fs/data/Revivediff-SGA2/experiments/ReviveDiff/ReviveDiff_train
+    val_images: /autodl-fs/data/Revivediff-SGA2/experiments/ReviveDiff/ReviveDiff_train/val_images
+  ]
+  train:[
+    optimizer: Lion
+    lr_G: 4e-05
+    lr_scheme: TrueCosineAnnealingLR
+    beta1: 0.9
+    beta2: 0.99
+    weight_decay_G: 0
+    niter: 700000
+    warmup_iter: -1
+    lr_steps: [200000, 400000, 600000]
+    lr_gamma: 0.5
+    eta_min: 1e-07
+    is_weighted: False
+    loss_type: l1
+    weight: 1.0
+    manual_seed: 0
+    val_freq: 5000.0
+  ]
+  logger:[
+    print_freq: 100
+    save_checkpoint_freq: 5000.0
+  ]
+  is_train: True
+  dist: False
+
+26-08-14 15:37:08.579 - INFO: Dataset [LQGTDataset - Train_Dataset] is created.
+26-08-14 15:37:08.580 - INFO: Number of train images: 200, iters: 50
+26-08-14 15:37:08.580 - INFO: Total epochs needed: 14000 for iters 700,000
+26-08-14 15:37:08.584 - INFO: Dataset [LQGTDataset - Val_Dataset] is created.
+26-08-14 15:37:08.584 - INFO: Number of val images in [Val_Dataset]: 100
+26-08-14 15:37:09.853 - INFO: Network G structure: DataParallel - ConditionalNAFNet, with parameters: 88,346,783
+26-08-14 15:37:09.853 - INFO: ConditionalNAFNet(
+  (time_mlp): Sequential(
+    (0): SinusoidalPosEmb()
+    (1): Linear(in_features=64, out_features=512, bias=True)
+    (2): SimpleGate()
+    (3): Linear(in_features=256, out_features=256, bias=True)
+  )
+  (intro): Conv2d(6, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+  (ending): Conv2d(64, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+  (encoders): ModuleList(
+    (0): Sequential(
+      (0): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=256, bias=True)
+        )
+        (conv1): Conv2d(64, 128, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=128)
+        (conv3): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=64)
+        (dconv1): Sequential(
+          (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=64)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=64)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=64)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(64, 128, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(64, 8, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(8, 64, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+    )
+    (1): Sequential(
+      (0): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=512, bias=True)
+        )
+        (conv1): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=256)
+        (conv3): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=128)
+        (dconv1): Sequential(
+          (0): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=128)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=128)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=128)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(128, 16, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(16, 128, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+    )
+    (2): Sequential(
+      (0): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=1024, bias=True)
+        )
+        (conv1): Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (conv3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=256)
+        (dconv1): Sequential(
+          (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=256)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=256)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=256)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(256, 32, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(32, 256, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+    )
+    (3): Sequential(
+      (0): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (1): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (2): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (3): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (4): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (5): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (6): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (7): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (8): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (9): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (10): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (11): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (12): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (13): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (14): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (15): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (16): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (17): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (18): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (19): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (20): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (21): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (22): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (23): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (24): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (25): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (26): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+      (27): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+    )
+  )
+  (decoders): ModuleList(
+    (0): Sequential(
+      (0): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=2048, bias=True)
+        )
+        (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+        (conv3): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (dconv1): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=512)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+    )
+    (1): Sequential(
+      (0): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=1024, bias=True)
+        )
+        (conv1): Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=512)
+        (conv3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=256)
+        (dconv1): Sequential(
+          (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=256)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=256)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=256)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(256, 32, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(32, 256, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+    )
+    (2): Sequential(
+      (0): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=512, bias=True)
+        )
+        (conv1): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=256)
+        (conv3): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=128)
+        (dconv1): Sequential(
+          (0): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=128)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=128)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=128)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(128, 16, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(16, 128, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+    )
+    (3): Sequential(
+      (0): CFBlock(
+        (mlp): Sequential(
+          (0): SimpleGate()
+          (1): Linear(in_features=128, out_features=256, bias=True)
+        )
+        (conv1): Conv2d(64, 128, kernel_size=(1, 1), stride=(1, 1))
+        (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=128)
+        (conv3): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=64)
+        (dconv1): Sequential(
+          (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=64)
+          (1): GELU(approximate='none')
+        )
+        (dconv2): Sequential(
+          (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=64)
+          (1): GELU(approximate='none')
+        )
+        (dconv3): Sequential(
+          (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=64)
+          (1): GELU(approximate='none')
+        )
+        (sca): Sequential(
+          (0): AdaptiveAvgPool2d(output_size=1)
+          (1): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (sg): SimpleGate()
+        (conv4): Conv2d(64, 128, kernel_size=(1, 1), stride=(1, 1))
+        (conv5): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (norm1): LayerNorm()
+        (norm2): LayerNorm()
+        (dropout1): Identity()
+        (dropout2): Identity()
+        (fusion): Fusion(
+          (sa): SpatialAttention(
+            (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+          )
+          (ca): ChannelAttention(
+            (gap): AdaptiveAvgPool2d(output_size=1)
+            (ca): Sequential(
+              (0): Conv2d(64, 8, kernel_size=(1, 1), stride=(1, 1))
+              (1): ReLU(inplace=True)
+              (2): Conv2d(8, 64, kernel_size=(1, 1), stride=(1, 1))
+            )
+          )
+          (pa): PA(
+            (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+            (sigmoid): Sigmoid()
+          )
+          (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (gelu): GELU(approximate='none')
+      )
+    )
+  )
+  (middle_blks): Sequential(
+    (0): CFBlock(
+      (mlp): Sequential(
+        (0): SimpleGate()
+        (1): Linear(in_features=128, out_features=4096, bias=True)
+      )
+      (conv1): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(1, 1))
+      (conv2): Conv2d(2048, 2048, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2048)
+      (conv3): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024)
+      (dconv1): Sequential(
+        (0): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), groups=1024)
+        (1): GELU(approximate='none')
+      )
+      (dconv2): Sequential(
+        (0): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), groups=1024)
+        (1): GELU(approximate='none')
+      )
+      (dconv3): Sequential(
+        (0): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(8, 8), dilation=(8, 8), groups=1024)
+        (1): GELU(approximate='none')
+      )
+      (sca): Sequential(
+        (0): AdaptiveAvgPool2d(output_size=1)
+        (1): Conv2d(1024, 1024, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (sg): SimpleGate()
+      (conv4): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(1, 1))
+      (conv5): Conv2d(1024, 1024, kernel_size=(1, 1), stride=(1, 1))
+      (norm1): LayerNorm()
+      (norm2): LayerNorm()
+      (dropout1): Identity()
+      (dropout2): Identity()
+      (fusion): Fusion(
+        (sa): SpatialAttention(
+          (sa): Conv2d(2, 1, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), padding_mode=reflect)
+        )
+        (ca): ChannelAttention(
+          (gap): AdaptiveAvgPool2d(output_size=1)
+          (ca): Sequential(
+            (0): Conv2d(1024, 128, kernel_size=(1, 1), stride=(1, 1))
+            (1): ReLU(inplace=True)
+            (2): Conv2d(128, 1024, kernel_size=(1, 1), stride=(1, 1))
+          )
+        )
+        (pa): PA(
+          (conv): Conv2d(1024, 1024, kernel_size=(1, 1), stride=(1, 1))
+          (sigmoid): Sigmoid()
+        )
+        (conv): Conv2d(1024, 1024, kernel_size=(1, 1), stride=(1, 1))
+        (sigmoid): Sigmoid()
+      )
+      (gelu): GELU(approximate='none')
+    )
+  )
+  (ups): ModuleList(
+    (0): Sequential(
+      (0): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      (1): PixelShuffle(upscale_factor=2)
+    )
+    (1): Sequential(
+      (0): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      (1): PixelShuffle(upscale_factor=2)
+    )
+    (2): Sequential(
+      (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      (1): PixelShuffle(upscale_factor=2)
+    )
+    (3): Sequential(
+      (0): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      (1): PixelShuffle(upscale_factor=2)
+    )
+  )
+  (downs): ModuleList(
+    (0): Conv2d(64, 128, kernel_size=(2, 2), stride=(2, 2))
+    (1): Conv2d(128, 256, kernel_size=(2, 2), stride=(2, 2))
+    (2): Conv2d(256, 512, kernel_size=(2, 2), stride=(2, 2))
+    (3): Conv2d(512, 1024, kernel_size=(2, 2), stride=(2, 2))
+  )
+)
+26-08-14 15:37:09.976 - INFO: Model [DenoisingModel] is created.
+26-08-14 15:37:09.980 - INFO: Start training from epoch: 0, iter: 0
+26-08-14 15:38:22.223 - INFO: <epoch:  1, iter:     100, lr:4.000e-05> loss: 8.4458e+01 
+26-08-14 15:38:54.131 - INFO: <epoch:  3, iter:     200, lr:4.000e-05> loss: 1.0854e+02 
+26-08-14 15:39:25.988 - INFO: <epoch:  5, iter:     300, lr:4.000e-05> loss: 3.0820e+01 
+26-08-14 15:39:56.920 - INFO: <epoch:  7, iter:     400, lr:4.000e-05> loss: 2.4959e+01 
+26-08-14 15:40:29.136 - INFO: <epoch:  9, iter:     500, lr:4.000e-05> loss: 1.4140e+01 
+26-08-14 15:41:01.939 - INFO: <epoch: 11, iter:     600, lr:4.000e-05> loss: 5.1392e+01 
+26-08-14 15:41:35.134 - INFO: <epoch: 13, iter:     700, lr:4.000e-05> loss: 2.6733e+01 
+26-08-14 15:42:07.813 - INFO: <epoch: 15, iter:     800, lr:4.000e-05> loss: 3.5973e+01 
+26-08-14 15:42:39.932 - INFO: <epoch: 17, iter:     900, lr:4.000e-05> loss: 9.4041e+00 
+26-08-14 15:43:11.983 - INFO: <epoch: 19, iter:   1,000, lr:4.000e-05> loss: 1.4949e+01 
+26-08-14 15:43:43.284 - INFO: <epoch: 21, iter:   1,100, lr:4.000e-05> loss: 4.1202e+00 
+26-08-14 15:44:15.052 - INFO: <epoch: 23, iter:   1,200, lr:4.000e-05> loss: 4.5132e+00 
+26-08-14 15:44:46.959 - INFO: <epoch: 25, iter:   1,300, lr:4.000e-05> loss: 1.2602e+01 
+26-08-14 15:45:18.179 - INFO: <epoch: 27, iter:   1,400, lr:4.000e-05> loss: 4.0989e+00 
+26-08-14 15:45:49.980 - INFO: <epoch: 29, iter:   1,500, lr:4.000e-05> loss: 1.6737e+01 
+26-08-14 15:46:22.442 - INFO: <epoch: 31, iter:   1,600, lr:4.000e-05> loss: 8.7208e+00 
+26-08-14 15:46:53.822 - INFO: <epoch: 33, iter:   1,700, lr:4.000e-05> loss: 1.7933e+01 
+26-08-14 15:47:25.147 - INFO: <epoch: 35, iter:   1,800, lr:4.000e-05> loss: 1.4434e+01 
+26-08-14 15:47:56.779 - INFO: <epoch: 37, iter:   1,900, lr:4.000e-05> loss: 2.1592e+01 
+26-08-14 15:48:28.974 - INFO: <epoch: 39, iter:   2,000, lr:4.000e-05> loss: 1.4739e+01 
+26-08-14 15:49:01.198 - INFO: <epoch: 41, iter:   2,100, lr:4.000e-05> loss: 6.0738e+00 
+26-08-14 15:49:31.967 - INFO: <epoch: 43, iter:   2,200, lr:4.000e-05> loss: 1.7342e+01 
+26-08-14 15:50:03.664 - INFO: <epoch: 45, iter:   2,300, lr:4.000e-05> loss: 2.4655e+01 
+26-08-14 15:50:36.225 - INFO: <epoch: 47, iter:   2,400, lr:4.000e-05> loss: 7.3817e+00 
+26-08-14 15:51:08.583 - INFO: <epoch: 49, iter:   2,500, lr:4.000e-05> loss: 1.8932e+01 
+26-08-14 15:51:40.348 - INFO: <epoch: 51, iter:   2,600, lr:4.000e-05> loss: 1.5375e+01 
+26-08-14 15:52:11.407 - INFO: <epoch: 53, iter:   2,700, lr:4.000e-05> loss: 1.2423e+01 
+26-08-14 15:52:43.049 - INFO: <epoch: 55, iter:   2,800, lr:4.000e-05> loss: 1.1169e+01 
+26-08-14 15:53:14.776 - INFO: <epoch: 57, iter:   2,900, lr:4.000e-05> loss: 3.0485e+01 
+26-08-14 15:53:46.635 - INFO: <epoch: 59, iter:   3,000, lr:4.000e-05> loss: 1.0803e+01 
+26-08-14 15:54:17.511 - INFO: <epoch: 61, iter:   3,100, lr:4.000e-05> loss: 8.5537e+00 
+26-08-14 15:54:48.665 - INFO: <epoch: 63, iter:   3,200, lr:4.000e-05> loss: 2.6268e+00 
+26-08-14 15:55:19.439 - INFO: <epoch: 65, iter:   3,300, lr:4.000e-05> loss: 1.0948e+01 
+26-08-14 15:55:50.414 - INFO: <epoch: 67, iter:   3,400, lr:4.000e-05> loss: 3.0305e+00 
+26-08-14 15:56:23.182 - INFO: <epoch: 69, iter:   3,500, lr:4.000e-05> loss: 4.2856e+00 
+26-08-14 15:56:54.376 - INFO: <epoch: 71, iter:   3,600, lr:4.000e-05> loss: 1.7707e+01 
+26-08-14 15:57:25.592 - INFO: <epoch: 73, iter:   3,700, lr:4.000e-05> loss: 1.8783e+01 
+26-08-14 15:57:56.674 - INFO: <epoch: 75, iter:   3,800, lr:4.000e-05> loss: 1.2810e+01 
+26-08-14 15:58:27.396 - INFO: <epoch: 77, iter:   3,900, lr:4.000e-05> loss: 1.7939e+01 
+26-08-14 15:58:58.627 - INFO: <epoch: 79, iter:   4,000, lr:4.000e-05> loss: 2.2114e+01 
+26-08-14 15:59:30.438 - INFO: <epoch: 81, iter:   4,100, lr:4.000e-05> loss: 7.0543e+00 
+26-08-14 16:00:01.631 - INFO: <epoch: 83, iter:   4,200, lr:4.000e-05> loss: 2.1861e+00 
+26-08-14 16:00:33.833 - INFO: <epoch: 85, iter:   4,300, lr:4.000e-05> loss: 1.0959e+01 
+26-08-14 16:01:05.566 - INFO: <epoch: 87, iter:   4,400, lr:4.000e-05> loss: 1.6364e+01 
+26-08-14 16:01:37.052 - INFO: <epoch: 89, iter:   4,500, lr:4.000e-05> loss: 1.5081e+01 
+26-08-14 16:02:08.635 - INFO: <epoch: 91, iter:   4,600, lr:4.000e-05> loss: 7.6496e+00 
+26-08-14 16:02:39.998 - INFO: <epoch: 93, iter:   4,700, lr:4.000e-05> loss: 7.1558e+00 
+26-08-14 16:03:11.877 - INFO: <epoch: 95, iter:   4,800, lr:4.000e-05> loss: 1.9546e+01 
+26-08-14 16:03:43.385 - INFO: <epoch: 97, iter:   4,900, lr:4.000e-05> loss: 1.4328e+01 
+26-08-14 16:04:14.316 - INFO: <epoch: 99, iter:   5,000, lr:3.999e-05> loss: 7.1631e+00 
+26-08-14 16:21:38.740 - INFO: # Validation # PSNR: 29.177575, Best PSNR: 29.177575| Iter: 5000
+26-08-14 16:21:38.741 - INFO: Saving models and training states.
+26-08-14 16:22:20.905 - INFO: <epoch:101, iter:   5,100, lr:3.999e-05> loss: 9.2389e+00 
+26-08-14 16:22:53.022 - INFO: <epoch:103, iter:   5,200, lr:3.999e-05> loss: 1.4953e+01 
+26-08-14 16:23:24.643 - INFO: <epoch:105, iter:   5,300, lr:3.999e-05> loss: 2.0460e+00 
+26-08-14 16:23:56.698 - INFO: <epoch:107, iter:   5,400, lr:3.999e-05> loss: 8.5062e+00 
+26-08-14 16:24:27.869 - INFO: <epoch:109, iter:   5,500, lr:3.999e-05> loss: 5.6271e+00 
+26-08-14 16:24:59.567 - INFO: <epoch:111, iter:   5,600, lr:3.999e-05> loss: 9.8634e+00 
+26-08-14 16:25:31.037 - INFO: <epoch:113, iter:   5,700, lr:3.999e-05> loss: 1.2622e+01 
+26-08-14 16:26:02.750 - INFO: <epoch:115, iter:   5,800, lr:3.999e-05> loss: 7.7009e+00 
+26-08-14 16:26:33.709 - INFO: <epoch:117, iter:   5,900, lr:3.999e-05> loss: 9.2608e+00 
+26-08-14 16:27:05.750 - INFO: <epoch:119, iter:   6,000, lr:3.999e-05> loss: 8.2578e+00 
+26-08-14 16:27:37.483 - INFO: <epoch:121, iter:   6,100, lr:3.999e-05> loss: 9.6909e+00 
+26-08-14 16:28:09.823 - INFO: <epoch:123, iter:   6,200, lr:3.999e-05> loss: 1.0815e+01 
+26-08-14 16:28:41.997 - INFO: <epoch:125, iter:   6,300, lr:3.999e-05> loss: 1.2277e+01 
+26-08-14 16:29:13.537 - INFO: <epoch:127, iter:   6,400, lr:3.999e-05> loss: 1.2645e+01 
+26-08-14 16:29:44.410 - INFO: <epoch:129, iter:   6,500, lr:3.999e-05> loss: 1.7376e+00 
+26-08-14 16:30:15.369 - INFO: <epoch:131, iter:   6,600, lr:3.999e-05> loss: 1.8903e+00 
+26-08-14 16:30:46.668 - INFO: <epoch:133, iter:   6,700, lr:3.999e-05> loss: 2.0936e+00 
+26-08-14 16:31:18.097 - INFO: <epoch:135, iter:   6,800, lr:3.999e-05> loss: 3.2081e+00 
+26-08-14 16:31:49.460 - INFO: <epoch:137, iter:   6,900, lr:3.999e-05> loss: 1.0958e+01 
+26-08-14 16:32:20.924 - INFO: <epoch:139, iter:   7,000, lr:3.999e-05> loss: 1.5556e+01 
+26-08-14 16:32:52.116 - INFO: <epoch:141, iter:   7,100, lr:3.999e-05> loss: 8.6394e+00 
+26-08-14 16:33:22.987 - INFO: <epoch:143, iter:   7,200, lr:3.999e-05> loss: 7.3193e+00 
+26-08-14 16:33:54.792 - INFO: <epoch:145, iter:   7,300, lr:3.999e-05> loss: 1.1732e+01 
+26-08-14 16:34:26.045 - INFO: <epoch:147, iter:   7,400, lr:3.999e-05> loss: 1.1928e+01 
+26-08-14 16:34:57.976 - INFO: <epoch:149, iter:   7,500, lr:3.999e-05> loss: 1.9409e+00 
+26-08-14 16:35:29.453 - INFO: <epoch:151, iter:   7,600, lr:3.999e-05> loss: 1.4788e+00 
+26-08-14 16:36:00.797 - INFO: <epoch:153, iter:   7,700, lr:3.999e-05> loss: 7.6878e+00 
+26-08-14 16:36:32.409 - INFO: <epoch:155, iter:   7,800, lr:3.999e-05> loss: 1.1929e+01 
+26-08-14 16:37:02.869 - INFO: <epoch:157, iter:   7,900, lr:3.999e-05> loss: 8.5948e+00 
+26-08-14 16:37:35.088 - INFO: <epoch:159, iter:   8,000, lr:3.999e-05> loss: 2.4233e+01 
+26-08-14 16:38:06.870 - INFO: <epoch:161, iter:   8,100, lr:3.999e-05> loss: 6.9768e+00 
+26-08-14 16:38:38.523 - INFO: <epoch:163, iter:   8,200, lr:3.999e-05> loss: 5.4102e+00 
+26-08-14 16:39:09.805 - INFO: <epoch:165, iter:   8,300, lr:3.999e-05> loss: 3.4652e+00 
+26-08-14 16:39:41.405 - INFO: <epoch:167, iter:   8,400, lr:3.999e-05> loss: 1.0984e+01 
+26-08-14 16:40:12.188 - INFO: <epoch:169, iter:   8,500, lr:3.999e-05> loss: 8.3573e+00 
+26-08-14 16:40:43.502 - INFO: <epoch:171, iter:   8,600, lr:3.999e-05> loss: 1.1427e+01 
+26-08-14 16:41:15.184 - INFO: <epoch:173, iter:   8,700, lr:3.998e-05> loss: 6.1039e+00 
+26-08-14 16:41:46.061 - INFO: <epoch:175, iter:   8,800, lr:3.998e-05> loss: 1.6189e+00 
+26-08-14 16:42:17.422 - INFO: <epoch:177, iter:   8,900, lr:3.998e-05> loss: 2.2084e+00 
+26-08-14 16:42:48.713 - INFO: <epoch:179, iter:   9,000, lr:3.998e-05> loss: 1.3223e+01 
+26-08-14 16:43:19.443 - INFO: <epoch:181, iter:   9,100, lr:3.998e-05> loss: 7.5083e+00 
+26-08-14 16:43:50.737 - INFO: <epoch:183, iter:   9,200, lr:3.998e-05> loss: 1.2496e+01 
+26-08-14 16:44:22.819 - INFO: <epoch:185, iter:   9,300, lr:3.998e-05> loss: 6.4039e+00 
+26-08-14 16:44:54.599 - INFO: <epoch:187, iter:   9,400, lr:3.998e-05> loss: 4.6146e+00 
+26-08-14 16:45:26.218 - INFO: <epoch:189, iter:   9,500, lr:3.998e-05> loss: 2.0469e+00 
+26-08-14 16:45:57.356 - INFO: <epoch:191, iter:   9,600, lr:3.998e-05> loss: 7.6819e+00 
+26-08-14 16:46:28.229 - INFO: <epoch:193, iter:   9,700, lr:3.998e-05> loss: 1.5391e+00 
+26-08-14 16:46:59.362 - INFO: <epoch:195, iter:   9,800, lr:3.998e-05> loss: 9.2057e+00 
+26-08-14 16:47:29.949 - INFO: <epoch:197, iter:   9,900, lr:3.998e-05> loss: 2.0469e+00 
+26-08-14 16:48:00.820 - INFO: <epoch:199, iter:  10,000, lr:3.998e-05> loss: 6.0999e+00 
+26-08-14 17:05:16.880 - INFO: # Validation # PSNR: 31.164597, Best PSNR: 31.164597| Iter: 10000
+26-08-14 17:05:16.881 - INFO: Saving models and training states.
+26-08-14 17:06:01.690 - INFO: <epoch:201, iter:  10,100, lr:3.998e-05> loss: 7.6569e+00 
+26-08-14 17:06:32.077 - INFO: <epoch:203, iter:  10,200, lr:3.998e-05> loss: 1.3078e+01 
+26-08-14 17:07:03.632 - INFO: <epoch:205, iter:  10,300, lr:3.998e-05> loss: 6.9305e+00 
+26-08-14 17:07:34.401 - INFO: <epoch:207, iter:  10,400, lr:3.998e-05> loss: 1.4022e+01 
+26-08-14 17:08:05.145 - INFO: <epoch:209, iter:  10,500, lr:3.998e-05> loss: 7.6330e+00 
+26-08-14 17:08:36.586 - INFO: <epoch:211, iter:  10,600, lr:3.998e-05> loss: 5.9451e+00 
+26-08-14 17:09:08.097 - INFO: <epoch:213, iter:  10,700, lr:3.998e-05> loss: 1.6150e+00 
+26-08-14 17:09:38.725 - INFO: <epoch:215, iter:  10,800, lr:3.998e-05> loss: 3.0582e+01 
+26-08-14 17:10:10.169 - INFO: <epoch:217, iter:  10,900, lr:3.998e-05> loss: 9.7750e+00 
+26-08-14 17:10:41.066 - INFO: <epoch:219, iter:  11,000, lr:3.998e-05> loss: 1.4807e+00 
+26-08-14 17:11:12.305 - INFO: <epoch:221, iter:  11,100, lr:3.998e-05> loss: 4.3811e+00 
+26-08-14 17:11:44.080 - INFO: <epoch:223, iter:  11,200, lr:3.997e-05> loss: 1.8786e+00 
+26-08-14 17:12:14.712 - INFO: <epoch:225, iter:  11,300, lr:3.997e-05> loss: 4.9604e+00 
+26-08-14 17:12:45.935 - INFO: <epoch:227, iter:  11,400, lr:3.997e-05> loss: 9.8343e+00 
+26-08-14 17:13:17.355 - INFO: <epoch:229, iter:  11,500, lr:3.997e-05> loss: 1.2686e+00 
+26-08-14 17:13:49.356 - INFO: <epoch:231, iter:  11,600, lr:3.997e-05> loss: 1.1791e+00 
+26-08-14 17:14:21.926 - INFO: <epoch:233, iter:  11,700, lr:3.997e-05> loss: 1.0361e+01 
+26-08-14 17:14:53.629 - INFO: <epoch:235, iter:  11,800, lr:3.997e-05> loss: 2.5391e+00 
+26-08-14 17:15:25.326 - INFO: <epoch:237, iter:  11,900, lr:3.997e-05> loss: 1.0650e+01 
+26-08-14 17:15:57.690 - INFO: <epoch:239, iter:  12,000, lr:3.997e-05> loss: 1.1297e+01 
+26-08-14 17:16:29.357 - INFO: <epoch:241, iter:  12,100, lr:3.997e-05> loss: 8.2678e+00 
+26-08-14 17:17:00.737 - INFO: <epoch:243, iter:  12,200, lr:3.997e-05> loss: 1.6816e+01 
+26-08-14 17:17:32.206 - INFO: <epoch:245, iter:  12,300, lr:3.997e-05> loss: 8.8944e+00 
+26-08-14 17:18:03.732 - INFO: <epoch:247, iter:  12,400, lr:3.997e-05> loss: 2.3407e+00 
+26-08-14 17:18:35.734 - INFO: <epoch:249, iter:  12,500, lr:3.997e-05> loss: 1.4103e+01 
+26-08-14 17:19:08.825 - INFO: <epoch:251, iter:  12,600, lr:3.997e-05> loss: 1.2567e+01 
+26-08-14 17:19:40.988 - INFO: <epoch:253, iter:  12,700, lr:3.997e-05> loss: 1.1166e+01 
+26-08-14 17:20:13.238 - INFO: <epoch:255, iter:  12,800, lr:3.997e-05> loss: 1.2481e+01 
+26-08-14 17:20:44.987 - INFO: <epoch:257, iter:  12,900, lr:3.997e-05> loss: 1.4175e+00 
+26-08-14 17:21:16.011 - INFO: <epoch:259, iter:  13,000, lr:3.997e-05> loss: 1.2615e+01 
+26-08-14 17:21:47.178 - INFO: <epoch:261, iter:  13,100, lr:3.997e-05> loss: 6.6197e+00 
+26-08-14 17:22:18.445 - INFO: <epoch:263, iter:  13,200, lr:3.997e-05> loss: 1.1127e+01 
+26-08-14 17:22:50.400 - INFO: <epoch:265, iter:  13,300, lr:3.996e-05> loss: 1.0707e+01 
+26-08-14 17:23:23.329 - INFO: <epoch:267, iter:  13,400, lr:3.996e-05> loss: 7.7996e+00 
+26-08-14 17:23:55.087 - INFO: <epoch:269, iter:  13,500, lr:3.996e-05> loss: 5.7657e+00 
+26-08-14 17:24:26.011 - INFO: <epoch:271, iter:  13,600, lr:3.996e-05> loss: 7.4987e+00 
+26-08-14 17:24:57.558 - INFO: <epoch:273, iter:  13,700, lr:3.996e-05> loss: 7.6764e+00 
+26-08-14 17:25:29.248 - INFO: <epoch:275, iter:  13,800, lr:3.996e-05> loss: 1.6268e+01 
+26-08-14 17:26:01.469 - INFO: <epoch:277, iter:  13,900, lr:3.996e-05> loss: 1.6535e+01 
+26-08-14 17:26:33.158 - INFO: <epoch:279, iter:  14,000, lr:3.996e-05> loss: 1.2550e+01 
+26-08-14 17:27:03.604 - INFO: <epoch:281, iter:  14,100, lr:3.996e-05> loss: 6.6895e+00 
+26-08-14 17:27:34.706 - INFO: <epoch:283, iter:  14,200, lr:3.996e-05> loss: 1.3017e+00 
+26-08-14 17:28:06.349 - INFO: <epoch:285, iter:  14,300, lr:3.996e-05> loss: 8.6394e+00 
+26-08-14 17:28:38.019 - INFO: <epoch:287, iter:  14,400, lr:3.996e-05> loss: 1.5118e+00 
+26-08-14 17:29:10.795 - INFO: <epoch:289, iter:  14,500, lr:3.996e-05> loss: 5.6092e+00 
+26-08-14 17:29:42.197 - INFO: <epoch:291, iter:  14,600, lr:3.996e-05> loss: 2.4086e+00 
+26-08-14 17:30:14.761 - INFO: <epoch:293, iter:  14,700, lr:3.996e-05> loss: 8.1013e+00 
+26-08-14 17:30:46.934 - INFO: <epoch:295, iter:  14,800, lr:3.996e-05> loss: 8.4520e+00 
+26-08-14 17:31:18.562 - INFO: <epoch:297, iter:  14,900, lr:3.996e-05> loss: 1.7298e+00 
+26-08-14 17:31:50.052 - INFO: <epoch:299, iter:  15,000, lr:3.995e-05> loss: 1.9924e+00 
+26-08-14 17:49:46.495 - INFO: # Validation # PSNR: 32.075754, Best PSNR: 32.075754| Iter: 15000
+26-08-14 17:49:46.496 - INFO: Saving models and training states.
+26-08-14 17:50:30.874 - INFO: <epoch:301, iter:  15,100, lr:3.995e-05> loss: 5.7910e+00 
+26-08-14 17:51:03.752 - INFO: <epoch:303, iter:  15,200, lr:3.995e-05> loss: 6.5596e+00 
+26-08-14 17:51:36.536 - INFO: <epoch:305, iter:  15,300, lr:3.995e-05> loss: 3.6292e+00 
+26-08-14 17:52:08.949 - INFO: <epoch:307, iter:  15,400, lr:3.995e-05> loss: 1.2590e+01 
+26-08-14 17:52:41.707 - INFO: <epoch:309, iter:  15,500, lr:3.995e-05> loss: 1.7018e+01 
+26-08-14 17:53:14.436 - INFO: <epoch:311, iter:  15,600, lr:3.995e-05> loss: 2.5788e+00 
+26-08-14 17:53:46.289 - INFO: <epoch:313, iter:  15,700, lr:3.995e-05> loss: 1.1937e+01 
+26-08-14 17:54:17.502 - INFO: <epoch:315, iter:  15,800, lr:3.995e-05> loss: 9.8662e+00 
+26-08-14 17:54:50.206 - INFO: <epoch:317, iter:  15,900, lr:3.995e-05> loss: 1.3553e+01 
+26-08-14 17:55:23.619 - INFO: <epoch:319, iter:  16,000, lr:3.995e-05> loss: 1.0441e+01 
+26-08-14 17:55:55.983 - INFO: <epoch:321, iter:  16,100, lr:3.995e-05> loss: 1.5887e+00 
+26-08-14 17:56:30.251 - INFO: <epoch:323, iter:  16,200, lr:3.995e-05> loss: 5.5708e+00 
+26-08-14 17:57:03.318 - INFO: <epoch:325, iter:  16,300, lr:3.995e-05> loss: 1.1538e+01 
+26-08-14 17:57:36.405 - INFO: <epoch:327, iter:  16,400, lr:3.995e-05> loss: 1.1946e+01 
+26-08-14 17:58:08.748 - INFO: <epoch:329, iter:  16,500, lr:3.995e-05> loss: 6.4037e+00 
+26-08-14 17:58:42.318 - INFO: <epoch:331, iter:  16,600, lr:3.994e-05> loss: 3.5505e+00 
+26-08-14 17:59:13.923 - INFO: <epoch:333, iter:  16,700, lr:3.994e-05> loss: 9.4282e+00 
+26-08-14 17:59:46.231 - INFO: <epoch:335, iter:  16,800, lr:3.994e-05> loss: 5.8783e+00 
+26-08-14 18:00:19.454 - INFO: <epoch:337, iter:  16,900, lr:3.994e-05> loss: 2.7732e+00 
+26-08-14 18:00:52.671 - INFO: <epoch:339, iter:  17,000, lr:3.994e-05> loss: 2.7976e+00 
+26-08-14 18:01:26.337 - INFO: <epoch:341, iter:  17,100, lr:3.994e-05> loss: 1.9087e+00 
+26-08-14 18:01:59.304 - INFO: <epoch:343, iter:  17,200, lr:3.994e-05> loss: 5.7202e+00 
+26-08-14 18:02:31.873 - INFO: <epoch:345, iter:  17,300, lr:3.994e-05> loss: 1.5456e+01 
+26-08-14 18:03:04.475 - INFO: <epoch:347, iter:  17,400, lr:3.994e-05> loss: 5.5527e+00 
+26-08-14 18:03:37.400 - INFO: <epoch:349, iter:  17,500, lr:3.994e-05> loss: 9.9329e-01 
+26-08-14 18:04:09.844 - INFO: <epoch:351, iter:  17,600, lr:3.994e-05> loss: 2.4053e+00 
+26-08-14 18:04:43.283 - INFO: <epoch:353, iter:  17,700, lr:3.994e-05> loss: 1.1067e+01 
+26-08-14 18:05:15.481 - INFO: <epoch:355, iter:  17,800, lr:3.994e-05> loss: 1.6860e+00 
+26-08-14 18:05:48.180 - INFO: <epoch:357, iter:  17,900, lr:3.994e-05> loss: 1.4048e+00 
+26-08-14 18:06:21.295 - INFO: <epoch:359, iter:  18,000, lr:3.993e-05> loss: 5.9400e+00 
+26-08-14 18:06:53.166 - INFO: <epoch:361, iter:  18,100, lr:3.993e-05> loss: 3.3567e+00 
+26-08-14 18:07:25.701 - INFO: <epoch:363, iter:  18,200, lr:3.993e-05> loss: 1.4455e+01 
+26-08-14 18:07:57.535 - INFO: <epoch:365, iter:  18,300, lr:3.993e-05> loss: 9.9427e-01 
+26-08-14 18:08:29.495 - INFO: <epoch:367, iter:  18,400, lr:3.993e-05> loss: 9.9194e+00 
+26-08-14 18:09:00.494 - INFO: <epoch:369, iter:  18,500, lr:3.993e-05> loss: 2.5948e+00 
+26-08-14 18:09:32.850 - INFO: <epoch:371, iter:  18,600, lr:3.993e-05> loss: 1.8311e+01 
+26-08-14 18:10:04.835 - INFO: <epoch:373, iter:  18,700, lr:3.993e-05> loss: 6.8981e+00 
+26-08-14 18:10:36.629 - INFO: <epoch:375, iter:  18,800, lr:3.993e-05> loss: 1.4663e+01 
+26-08-14 18:11:08.238 - INFO: <epoch:377, iter:  18,900, lr:3.993e-05> loss: 1.3250e+00 
+26-08-14 18:11:41.455 - INFO: <epoch:379, iter:  19,000, lr:3.993e-05> loss: 1.5465e+01 
+26-08-14 18:12:13.470 - INFO: <epoch:381, iter:  19,100, lr:3.993e-05> loss: 9.2129e+00 
+26-08-14 18:12:44.285 - INFO: <epoch:383, iter:  19,200, lr:3.993e-05> loss: 3.3823e+00 
+26-08-14 18:13:15.861 - INFO: <epoch:385, iter:  19,300, lr:3.993e-05> loss: 7.5164e+00 
+26-08-14 18:13:47.087 - INFO: <epoch:387, iter:  19,400, lr:3.992e-05> loss: 5.5230e+00 
+26-08-14 18:14:18.586 - INFO: <epoch:389, iter:  19,500, lr:3.992e-05> loss: 1.1402e+00 
+26-08-14 18:14:50.517 - INFO: <epoch:391, iter:  19,600, lr:3.992e-05> loss: 1.4081e+01 
+26-08-14 18:15:22.102 - INFO: <epoch:393, iter:  19,700, lr:3.992e-05> loss: 5.8528e+00 
+26-08-14 18:15:54.304 - INFO: <epoch:395, iter:  19,800, lr:3.992e-05> loss: 8.7598e+00 
+26-08-14 18:16:25.233 - INFO: <epoch:397, iter:  19,900, lr:3.992e-05> loss: 2.0228e+00 
+26-08-14 18:16:57.683 - INFO: <epoch:399, iter:  20,000, lr:3.992e-05> loss: 1.3378e+01 
+26-08-14 18:34:27.833 - INFO: # Validation # PSNR: 32.547337, Best PSNR: 32.547337| Iter: 20000
+26-08-14 18:34:27.834 - INFO: Saving models and training states.
+26-08-14 18:35:10.835 - INFO: <epoch:401, iter:  20,100, lr:3.992e-05> loss: 1.5277e+01 
+26-08-14 18:35:42.191 - INFO: <epoch:403, iter:  20,200, lr:3.992e-05> loss: 4.1927e+00 
+26-08-14 18:36:13.288 - INFO: <epoch:405, iter:  20,300, lr:3.992e-05> loss: 8.7166e+00 
+26-08-14 18:36:44.295 - INFO: <epoch:407, iter:  20,400, lr:3.992e-05> loss: 7.8078e+00 
+26-08-14 18:37:15.321 - INFO: <epoch:409, iter:  20,500, lr:3.992e-05> loss: 8.0578e+00 
+26-08-14 18:37:45.969 - INFO: <epoch:411, iter:  20,600, lr:3.991e-05> loss: 1.0007e+01 
+26-08-14 18:38:17.457 - INFO: <epoch:413, iter:  20,700, lr:3.991e-05> loss: 1.2197e+01 
+26-08-14 18:38:48.983 - INFO: <epoch:415, iter:  20,800, lr:3.991e-05> loss: 1.2005e+01 
+26-08-14 18:39:20.503 - INFO: <epoch:417, iter:  20,900, lr:3.991e-05> loss: 6.7064e+00 
+26-08-14 18:39:50.976 - INFO: <epoch:419, iter:  21,000, lr:3.991e-05> loss: 3.0355e+00 
+26-08-14 18:40:21.937 - INFO: <epoch:421, iter:  21,100, lr:3.991e-05> loss: 1.6948e+01 
+26-08-14 18:40:53.823 - INFO: <epoch:423, iter:  21,200, lr:3.991e-05> loss: 8.1670e+00 
+26-08-14 18:41:24.330 - INFO: <epoch:425, iter:  21,300, lr:3.991e-05> loss: 2.6511e+00 
+26-08-14 18:41:55.383 - INFO: <epoch:427, iter:  21,400, lr:3.991e-05> loss: 1.4369e+00 
+26-08-14 18:42:26.131 - INFO: <epoch:429, iter:  21,500, lr:3.991e-05> loss: 4.5207e+00 
+26-08-14 18:42:57.162 - INFO: <epoch:431, iter:  21,600, lr:3.991e-05> loss: 9.1724e+00 
+26-08-14 18:43:28.364 - INFO: <epoch:433, iter:  21,700, lr:3.991e-05> loss: 1.8805e+01 
+26-08-14 18:43:59.282 - INFO: <epoch:435, iter:  21,800, lr:3.990e-05> loss: 1.0996e+01 
+26-08-14 18:44:30.641 - INFO: <epoch:437, iter:  21,900, lr:3.990e-05> loss: 1.1485e+01 
+26-08-14 18:45:01.748 - INFO: <epoch:439, iter:  22,000, lr:3.990e-05> loss: 5.5812e+00 
+26-08-14 18:45:33.008 - INFO: <epoch:441, iter:  22,100, lr:3.990e-05> loss: 1.2168e+01 
+26-08-14 18:46:04.101 - INFO: <epoch:443, iter:  22,200, lr:3.990e-05> loss: 6.4828e+00 
+26-08-14 18:46:35.008 - INFO: <epoch:445, iter:  22,300, lr:3.990e-05> loss: 8.4567e+00 
+26-08-14 18:47:05.901 - INFO: <epoch:447, iter:  22,400, lr:3.990e-05> loss: 4.9922e+00 
+26-08-14 18:47:37.169 - INFO: <epoch:449, iter:  22,500, lr:3.990e-05> loss: 1.2631e+01 
+26-08-14 18:48:08.459 - INFO: <epoch:451, iter:  22,600, lr:3.990e-05> loss: 1.0628e+01 
+26-08-14 18:48:40.274 - INFO: <epoch:453, iter:  22,700, lr:3.990e-05> loss: 2.0090e+00 
+26-08-14 18:49:10.903 - INFO: <epoch:455, iter:  22,800, lr:3.990e-05> loss: 8.4190e+00 
+26-08-14 18:49:42.425 - INFO: <epoch:457, iter:  22,900, lr:3.989e-05> loss: 1.4033e+01 
+26-08-14 18:50:13.012 - INFO: <epoch:459, iter:  23,000, lr:3.989e-05> loss: 1.4154e+01 
+26-08-14 18:50:44.653 - INFO: <epoch:461, iter:  23,100, lr:3.989e-05> loss: 8.1467e+00 
+26-08-14 18:51:15.953 - INFO: <epoch:463, iter:  23,200, lr:3.989e-05> loss: 3.8054e+00 
+26-08-14 18:51:47.219 - INFO: <epoch:465, iter:  23,300, lr:3.989e-05> loss: 7.8119e+00 
+26-08-14 18:52:18.159 - INFO: <epoch:467, iter:  23,400, lr:3.989e-05> loss: 1.1392e+00 
+26-08-14 18:52:49.086 - INFO: <epoch:469, iter:  23,500, lr:3.989e-05> loss: 3.8887e+00 
+26-08-14 18:53:20.263 - INFO: <epoch:471, iter:  23,600, lr:3.989e-05> loss: 9.9644e+00 
+26-08-14 18:53:51.690 - INFO: <epoch:473, iter:  23,700, lr:3.989e-05> loss: 9.4977e+00 
+26-08-14 18:54:21.709 - INFO: <epoch:475, iter:  23,800, lr:3.989e-05> loss: 8.6048e+00 
+26-08-14 18:54:51.930 - INFO: <epoch:477, iter:  23,900, lr:3.989e-05> loss: 6.8207e+00 
+26-08-14 18:55:22.474 - INFO: <epoch:479, iter:  24,000, lr:3.988e-05> loss: 6.0876e+00 
+26-08-14 18:55:53.038 - INFO: <epoch:481, iter:  24,100, lr:3.988e-05> loss: 1.2499e+01 
+26-08-14 18:56:23.311 - INFO: <epoch:483, iter:  24,200, lr:3.988e-05> loss: 2.9040e+00 
+26-08-14 18:56:54.057 - INFO: <epoch:485, iter:  24,300, lr:3.988e-05> loss: 8.3374e-01 
+26-08-14 18:57:25.162 - INFO: <epoch:487, iter:  24,400, lr:3.988e-05> loss: 1.3922e+00 
+26-08-14 18:57:56.616 - INFO: <epoch:489, iter:  24,500, lr:3.988e-05> loss: 2.9476e+00 
+26-08-14 18:58:27.794 - INFO: <epoch:491, iter:  24,600, lr:3.988e-05> loss: 5.7311e+00 
+26-08-14 18:58:58.932 - INFO: <epoch:493, iter:  24,700, lr:3.988e-05> loss: 3.0518e+00 
+26-08-14 18:59:29.557 - INFO: <epoch:495, iter:  24,800, lr:3.988e-05> loss: 1.3341e+01 
+26-08-14 19:00:00.769 - INFO: <epoch:497, iter:  24,900, lr:3.988e-05> loss: 7.7180e+00 
+26-08-14 19:00:31.187 - INFO: <epoch:499, iter:  25,000, lr:3.987e-05> loss: 1.1937e+00 
+26-08-14 19:17:45.907 - INFO: # Validation # PSNR: 33.150214, Best PSNR: 33.150214| Iter: 25000
+26-08-14 19:17:45.908 - INFO: Saving models and training states.
+26-08-14 19:18:28.756 - INFO: <epoch:501, iter:  25,100, lr:3.987e-05> loss: 5.9499e+00 
+26-08-14 19:19:00.282 - INFO: <epoch:503, iter:  25,200, lr:3.987e-05> loss: 7.4945e+00 
+26-08-14 19:19:31.681 - INFO: <epoch:505, iter:  25,300, lr:3.987e-05> loss: 7.2186e-01 
+26-08-14 19:20:02.943 - INFO: <epoch:507, iter:  25,400, lr:3.987e-05> loss: 5.6856e+00 
